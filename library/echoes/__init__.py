@@ -16,7 +16,7 @@ class Echoes(Bot):
     def run(self, version):
         self.VERSION = version
 
-        with open("./library/echoes/token", 'r', encoding="utf-8") as tf:
+        with open("./library/echoes/token.txt", 'r', encoding="utf-8") as tf:
             self.TOKEN = tf.read()
         
         print("[*] Echoes running...")
