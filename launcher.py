@@ -1,5 +1,5 @@
-from library.echoes import echoes
+from src.echoes import echoes
 
-VERSION = "0.0.1"
+VERSION = "0.0.4"
 
 echoes.run(VERSION)

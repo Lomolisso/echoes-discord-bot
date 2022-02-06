@@ -1,2 +1,3 @@
-CREATE SCHEMA IF NOT EXISTS `echoes` DEFAULT CHARACTER SET utf8 ;
-USE `echoes` ;
+-- First we create the schema.
+CREATE SCHEMA IF NOT EXISTS "echoes"
+    AUTHORIZATION "postgres";
