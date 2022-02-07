@@ -1,5 +1,6 @@
 from os.path import isfile
 from psycopg2 import connect
+from psycopg2 import errors
 from apscheduler.triggers.cron import CronTrigger
 from tzlocal import get_localzone_name
 
@@ -38,7 +39,7 @@ def build():
     if isfile(BUILD_PATH):
         executescript(BUILD_PATH)
 
-def execture(command, *values):
+def execute(command, *values):
     cursor.execute(command, tuple(values))
 
 def executemany(command, valueset):
@@ -48,8 +49,24 @@ def executescript(path):
     with open(path, 'r', encoding="utf-8") as script:
         cursor.execute(script.read())
 
+def save_playlist(**kwargs) -> tuple[bool, str]:
+    try:
+        ctx, playlist_name, playlist_url = kwargs["ctx"], kwargs["name"], kwargs["url"]
+    except KeyError:
+        print("[*] DB error: save_playlist (KeyError)")
+        return (False, "An internal error has occurred.")
+    
+    values = (playlist_name, playlist_url, ctx.author.display_name, ctx.author.id)
+    command = """
+    INSERT INTO playlist (name, url, owner_name, owner_id)
+    VALUES(%s, %s, %s, %s)
+    """
 
+    try:
+        execute(command, *values)
+    except errors.UniqueViolation as e:
+        print("[*] DB error: save_playlist (UniqueViolation)")
+        return (False, "The playlist name was already taken.")
 
-
-
+    return (True, "ok")
 
