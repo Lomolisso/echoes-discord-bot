@@ -1,5 +1,22 @@
 from asyncio import sleep
-from pickle import TRUE
+from discord.ext import commands
+
+class EchoesCog(commands.Cog):
+    """
+    Parent class of all the cogs of the Echoes bot.
+    """
+    def __init__(self, bot):
+        self.bot = bot
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.cogs_ready_handler.cog_ready(self.qualified_name)
+        print(f"[*] Cog ready: {self.qualified_name}")
+
+    def reload_cog(self):
+        self.bot.reload_extension(f"src.cogs.{self.qualified_name}")
+        print(f"[*] Cog reloaded: {self.qualified_name}")
+
 
 class CogsReadyHandler:
     """

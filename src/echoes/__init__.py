@@ -2,7 +2,7 @@ from discord import Intents
 from datetime import datetime
 from discord import Embed
 from glob import glob
-from .cogs_ready_handler import CogsReadyHandler
+from .echoes_cogs import CogsReadyHandler
 from discord.ext.commands import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from ..db import db
@@ -78,14 +78,13 @@ class Echoes(Bot):
                 colour=0x34c080,
                 timestamp=datetime.utcnow(),
             )
-            embed.set_footer(text="Share it with your friends!")
             embed.set_author(
                 name="Lomolisso",
                 icon_url="https://avatars.githubusercontent.com/u/70459826?v=4",
                 url="https://github.com/Lomolisso"
             )
             embed.set_thumbnail(
-                url="https://64.media.tumblr.com/9348e0560a2d41919a71c5fe557c7a94/dc2a8493299949d9-fd/s540x810/e7b8c1f27674c207153149f9d7e03011a177a780.png"
+                url="https://i.imgur.com/kKz4srP.png"
             )
             fields = [
                 ("Version", f"`{self.VERSION}`", False),
@@ -93,6 +92,7 @@ class Echoes(Bot):
             ]
             for name, value, inline in fields:
                 embed.add_field(name=name, value=value, inline=inline)
+            embed.set_footer(text="Share it with your friends!")
 
             await channel.send(embed=embed)
             print("[*] Echoes ready")
@@ -105,4 +105,12 @@ class Echoes(Bot):
         if not message.author.bot:
             await self.process_commands(message)
 
+
 echoes = Echoes()
+
+@Bot.command(echoes)
+async def reload_cog(ctx, cog_name: str):
+    echoes.get_cog(cog_name).reload_cog()
+    await ctx.send(f"```Cog {cog_name} reloaded!```")
+
+

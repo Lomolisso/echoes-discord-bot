@@ -11,7 +11,6 @@ EXCEPTION
 END $$;
 
 CREATE TABLE IF NOT EXISTS "playlist" (
-    id SERIAL,
     name VARCHAR(100) NOT NULL,
     url TEXT NOT NULL,
     owner_name VARCHAR(100) NOT NULL,
@@ -19,10 +18,9 @@ CREATE TABLE IF NOT EXISTS "playlist" (
     description VARCHAR(255) DEFAULT 'No description provided',
     times_played INT NOT NULL DEFAULT 0,
     privacy PRIVACY_ENUM DEFAULT 'public',
-    icon_url TEXT DEFAULT 'https://avatars.githubusercontent.com/u/70459826?v=4',
+    icon_url TEXT DEFAULT 'https://i.imgur.com/jWkaANP.png',
     created_at TIMESTAMP WITHOUT TIME ZONE
     DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    CONSTRAINT pk PRIMARY KEY (id),
-    CONSTRAINT uni_pk UNIQUE (id),
-    CONSTRAINT name_pk UNIQUE (name)
+    CONSTRAINT pk PRIMARY KEY (name),
+    CONSTRAINT uni_pk UNIQUE (name)
 );
