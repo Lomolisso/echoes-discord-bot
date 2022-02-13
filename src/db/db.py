@@ -1,4 +1,6 @@
 from os.path import isfile
+from typing import Union
+from winsound import PlaySound
 from psycopg2 import connect
 from psycopg2 import errors
 from apscheduler.triggers.cron import CronTrigger
@@ -63,27 +65,79 @@ def fetchone(command, *values):
     execute(command, tuple(values))
     return cursor.fetchone()
 
-@with_commit
-def save_playlist(ctx, name, url) -> tuple[bool, str]:
-    values = (name, url, ctx.author.display_name, ctx.author.id)
-    command = """
-    INSERT INTO playlist (name, url, owner_name, owner_id)
-    VALUES(%s, %s, %s, %s)
+class Playlist:
     """
-
-    try:
-        execute(command, *values)
-    except errors.UniqueViolation as e:
-        print("[*] DB error: save_playlist (UniqueViolation)")
-        return (False, "The playlist name was already taken.")
-
-    return (True, "ok")
-
-def get_playlist_by_name(name: str) -> tuple:
-    command = f"""
-    SELECT *
-    FROM playlist
-    WHERE name = '{name}'
+    TODO: Docs static class.
     """
-    return fetchone(command, ())
+    FIELDS = [
+        "name",
+        "url",
+        "owner_name",
+        "owner_id",
+        "description",
+        "times_played",
+        "privacy",
+        "icon_url",
+        "created_at",
+    ]
+
+    EDITABLE_FIELDS = [
+        "name",
+        "url",
+        "description",
+        "privacy",
+        "icon_url",
+    ]
+
+    @staticmethod
+    @with_commit
+    def create(name, url, owner_name, owner_id) -> tuple[bool, str]:
+        """Saves a playlist in the database."""
+        values = (name, url, owner_name, owner_id)
+        command = """
+        INSERT INTO playlist (name, url, owner_name, owner_id)
+        VALUES(%s, %s, %s, %s)
+        """
+
+        try:
+            execute(command, *values)
+        except errors.UniqueViolation as e:
+            print("[*] DB error: save_playlist (UniqueViolation)")
+            return (False, "The playlist name was already taken.")
+
+        return (True, "ok")
+
+    @staticmethod
+    def get_by_name(name: str) -> dict:
+        """Gets by name (primary key) a playlist from the database."""
+        command = f"""
+        SELECT *
+        FROM playlist
+        WHERE name = '{name}'
+        """
+        playlist_tuple = fetchone(command, ())
+        if playlist_tuple is None:
+            return None
+        return dict(zip(Playlist.FIELDS, playlist_tuple))
+    
+
+    @staticmethod
+    def set_property(playlist_name: str, property_name: str, value: str) -> tuple[bool, str]:
+        if property_name not in Playlist.FIELDS:
+            return (False, f"The property `{property_name}` does not exists.")
+        
+        if property_name not in Playlist.EDITABLE_FIELDS:
+            return (False, f"The property `{property_name}` cannot be modified.")
+        
+        if property_name == 'name' and Playlist.get_by_name(value) is not None:
+            return (False, f"The playlist `{value}` already exists.")
+        
+        command = f"""
+        UPDATE playlist
+        SET {property_name} = '{value}'
+        WHERE name = '{playlist_name}'
+        """
+        execute(command, ())
+        return (True, "ok")
+            
 
