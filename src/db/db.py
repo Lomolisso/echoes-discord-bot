@@ -89,6 +89,8 @@ class Playlist:
         "icon_url",
     ]
 
+    RANKING_LIMIT = 10
+
     @staticmethod
     @with_commit
     def create(name, url, owner_name, owner_id) -> tuple[bool, str]:
@@ -139,5 +141,15 @@ class Playlist:
         """
         execute(command, ())
         return (True, "ok")
-            
 
+    @staticmethod
+    def get_ranking() -> list[dict]:
+        command = f"""
+        SELECT *
+        FROM playlist
+        ORDER BY times_played ASC,
+        name DESC
+        """
+        ranking_tuples = fetchmany(Playlist.RANKING_LIMIT, command, ())
+        return [dict(zip(Playlist.FIELDS, playlist_tuple)) for playlist_tuple in ranking_tuples]
+            

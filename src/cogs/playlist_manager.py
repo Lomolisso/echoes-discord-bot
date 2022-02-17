@@ -1,9 +1,42 @@
-from typing import Union
+from discord import Embed, Interaction, ButtonStyle
+from discord.ui import button, View
 from discord.ext import commands
 from datetime import datetime
-from discord import Embed
+from typing import Optional
 from ..echoes.echoes_cogs import EchoesCog 
 from ..db.db import Playlist
+
+class PaginatorView(View):
+    def __init__(self, pages: list[Embed], *, timeout: Optional[float] = 180):
+        self.page_index = 0
+        self.pages = pages
+        super().__init__(timeout=timeout)
+    
+    @button(label="⪻", custom_id="first_button", style=ButtonStyle.primary)
+    async def first_button_callback(self, button, interaction: Interaction):
+        self.page_index = 0
+        await interaction.response.edit_message(embed=self.pages[self.page_index], view=self)
+
+    @button(label="🡰", custom_id="prev_button", style=ButtonStyle.primary)
+    async def prev_button_callback(self, button, interaction: Interaction):
+        if self.page_index > 0:
+            self.page_index -= 1
+            await interaction.response.edit_message(embed=self.pages[self.page_index], view=self)
+
+    @button(label="♬", custom_id="play_button", style=ButtonStyle.green)
+    async def play_button_callback(self, button, interaction: Interaction):
+        pass
+
+    @button(label="🡲", custom_id="next_button", style=ButtonStyle.primary)
+    async def next_button_callback(self, button, interaction: Interaction):
+        if self.page_index < len(self.pages) - 1:
+            self.page_index += 1
+            await interaction.response.edit_message(embed=self.pages[self.page_index], view=self)
+
+    @button(label="⪼", custom_id="last_button", style=ButtonStyle.primary)
+    async def last_button_callback(self, button, interaction: Interaction):
+        self.page_index = len(self.pages) - 1
+        await interaction.response.edit_message(embed=self.pages[self.page_index], view=self)
 
 class PlaylistManager(EchoesCog, name="playlist_manager"):
     """
@@ -49,12 +82,19 @@ class PlaylistManager(EchoesCog, name="playlist_manager"):
         if playlist is None:
             embed = self.__generate_error_embed(f"The playlist {playlist_name} does not exist.")
         else:
-            embed = self.__generate_inspect_embed(playlist)
+            embed = self.__generate_inspect_embed(playlist, playlist['name'].capitalize())
 
         await ctx.send(embed=embed)
 
     @playlist.command(name="configure", aliases=["conf"])
     async def configure_playlist(self, ctx, playlist_name: str = None, property_name: str = None, value: str = None):
+        """
+        This command allows a user to configure a existing playlist.
+
+        Syntax: 
+            >>> $playlist configure <playlist_name> <property_name> <value>
+        
+        """
         if (playlist_name or property_name or value) is None:
             msg = """The correct syntax for this command is:
             ```$playlist configure <name> <property> <value>```"""
@@ -68,8 +108,25 @@ class PlaylistManager(EchoesCog, name="playlist_manager"):
             else:
                 embed = self.__configure_playlist(playlist_name, property_name, value)
         await ctx.send(embed=embed)
-        
+    
 
+    @playlist.command(name="ranking", aliases=["rank", "rankings"])
+    async def ranking_playlist(self, ctx):
+        """
+        This command displays a ranking with the most popular playlists.
+
+        Syntax: 
+            >>> $playlist ranking
+        
+        """
+        ranking = Playlist.get_ranking()
+        pages = []
+        for k, playlist in zip(range(1, len(ranking)+1), ranking):
+            pages.append(self.__generate_inspect_embed(playlist, f"Top {k}: {playlist['name'].capitalize()}"))
+        
+        await ctx.send(embed=pages[0], view=PaginatorView(pages))
+
+        
     def __generate_create_playlist_embed(self, playlist_name: str) -> Embed:
         embed = Embed(
                 title=f'Your playlist was successfully saved!',
@@ -92,9 +149,9 @@ class PlaylistManager(EchoesCog, name="playlist_manager"):
         embed.set_footer(text="Oops!")
         return embed
     
-    def __generate_inspect_embed(self, playlist: dict) -> Embed:
+    def __generate_inspect_embed(self, playlist: dict, title: str) -> Embed:
         embed = Embed(
-                title = f"{playlist['name'].capitalize()}\n",
+                title = f"{title}\n",
                 description = f"{playlist['description'].capitalize()}.",
                 colour = 0x34c080,
                 timestamp=datetime.utcnow(),
@@ -138,7 +195,6 @@ class PlaylistManager(EchoesCog, name="playlist_manager"):
                 timestamp=datetime.utcnow(),
             )
         return embed
-
-        
+         
 def setup(bot):
     bot.add_cog(PlaylistManager(bot))    
