@@ -61,7 +61,7 @@ class PlaylistManager(EchoesCog, name="playlist_manager"):
         status, msg = Playlist.create(
             name=playlist_name, 
             url=playlist_url,
-            owner_name=ctx.author.displauy_name,
+            owner_name=ctx.author.display_name,
             owner_id=ctx.author.id
         )
 
